@@ -10,7 +10,6 @@ end
 hl.bind("SUPER + T", exec("kitty"))
 hl.bind("SUPER + space", exec("dms ipc call spotlight toggle"))
 hl.bind("SUPER + V", exec("dms ipc call clipboard toggle"))
-hl.bind("SUPER + M", exec("dms ipc call processlist focusOrToggle"))
 hl.bind("SUPER + comma", exec("dms ipc call settings focusOrToggle"))
 hl.bind("SUPER + N", exec("dms ipc call notifications toggle"))
 hl.bind("SUPER + SHIFT + N", exec("dms ipc call notepad toggle"))
@@ -157,3 +156,6 @@ hl.bind("ALT + Print", exec("dms screenshot window"))
 
 -- === System Controls ===
 hl.bind("SUPER + SHIFT + P", hl.dsp.dpms({ action = "toggle" }))
+hl.bind("SUPER + C", hl.dsp.exec_cmd("google-chrome-stable"))
+hl.bind("SUPER + E", hl.dsp.exec_cmd("thunar"))
+hl.bind("SUPER + M", hl.dsp.exec_cmd("thunderbird"))
