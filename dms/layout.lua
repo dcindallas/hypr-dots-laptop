@@ -2,14 +2,19 @@
 
 hl.config({
 	general = {
-		gaps_in = 4,
-		gaps_out = 4,
-		border_size = 2,
+		gaps_in = 10,
+		gaps_out = 10,
+		border_size = 1,
 		resize_on_border = false,
 	},
 	decoration = {
 		rounding = 12,
 	},
+})
+
+hl.layer_rule({
+	match = { namespace = "^dms:.*$" },
+	xray = true,
 })
 
 hl.layer_rule({

@@ -1,0 +1,12 @@
+[Unit]
+Description=Synchronize applications with DankMaterialShell colors
+After=dms.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/dms-sync
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

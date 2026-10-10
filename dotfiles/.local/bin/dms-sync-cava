@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+CSS="$CONFIG_HOME/gtk-3.0/dank-colors.css"
+CAVA_CONFIG="$CONFIG_HOME/cava/config"
+
+get_color() {
+    awk -v name="$1" '
+        $1 == "@define-color" &&
+        $2 == name &&
+        $3 ~ /^#[[:xdigit:]]{6};?$/ {
+            gsub(/;/, "", $3)
+            print $3
+            exit
+        }
+    ' "$CSS"
+}
+
+mix_color() {
+    local first="${1#\#}"
+    local second="${2#\#}"
+    local percent="$3"
+
+    local r1=$((16#${first:0:2}))
+    local g1=$((16#${first:2:2}))
+    local b1=$((16#${first:4:2}))
+
+    local r2=$((16#${second:0:2}))
+    local g2=$((16#${second:2:2}))
+    local b2=$((16#${second:4:2}))
+
+    printf '#%02x%02x%02x' \
+        "$(((r1 * (100-percent) + r2 * percent + 50) / 100))" \
+        "$(((g1 * (100-percent) + g2 * percent + 50) / 100))" \
+        "$(((b1 * (100-percent) + b2 * percent + 50) / 100))"
+}
+
+[[ -r "$CSS" ]] || {
+    echo "DMS colors not found: $CSS" >&2
+    exit 1
+}
+
+[[ -f "$CAVA_CONFIG" ]] || {
+    echo "Cava config not found: $CAVA_CONFIG" >&2
+    exit 1
+}
+
+accent_fg="$(get_color accent_fg_color)"
+accent_bg="$(get_color accent_bg_color)"
+window_fg="$(get_color window_fg_color)"
+
+if [[ -z "$accent_fg" || -z "$accent_bg" || -z "$window_fg" ]]; then
+    echo "Required DMS colors are missing from $CSS" >&2
+    exit 1
+fi
+
+# Three evenly blended colors from dark accent to foreground.
+color_1="$(mix_color "$accent_fg" "$accent_bg" 35)"
+color_3="$window_fg"
+color_2="$(mix_color "$color_1" "$color_3" 50)"
+
+backup="$CAVA_CONFIG.dms-backup"
+[[ -e "$backup" ]] || cp -- "$CAVA_CONFIG" "$backup"
+
+temporary="$(mktemp "$CAVA_CONFIG.tmp.XXXXXX")"
+trap 'rm -f "$temporary"' EXIT
+
+awk \
+    -v c1="$color_1" \
+    -v c2="$color_2" \
+    -v c3="$color_3" '
+    function emit_colors() {
+        quote = sprintf("%c", 39)
+
+        print "[color]"
+        print "gradient = 0"
+        print "horizontal_gradient = 1"
+        print "horizontal_gradient_color_1 = " quote c1 quote
+        print "horizontal_gradient_color_2 = " quote c2 quote
+        print "horizontal_gradient_color_3 = " quote c3 quote
+    }
+
+    /^\[color\][[:space:]]*$/ {
+        if (!replaced) {
+            emit_colors()
+            replaced = 1
+        }
+
+        inside_color = 1
+        next
+    }
+
+    inside_color && /^\[[^]]+\][[:space:]]*$/ {
+        inside_color = 0
+    }
+
+    !inside_color {
+        print
+    }
+
+    END {
+        if (!replaced) {
+            print ""
+            emit_colors()
+        }
+    }
+' "$CAVA_CONFIG" > "$temporary"
+
+chmod --reference="$CAVA_CONFIG" "$temporary"
+mv -- "$temporary" "$CAVA_CONFIG"
+trap - EXIT
+
+if pgrep -x cava >/dev/null; then
+    pkill -USR2 -x cava
+fi
+
+printf 'Cava horizontal gradient: %s → %s → %s\n' \
+    "$color_1" "$color_2" "$color_3"
