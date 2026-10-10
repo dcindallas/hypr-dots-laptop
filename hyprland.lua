@@ -231,15 +231,7 @@ hl.animation({
 -- ### KITTY DROPDOWN
 -- ##################################################################
 
--- Float and center the dropdown terminal.
--- Size: 40% of monitor width and 30% of monitor height.
-hl.window_rule({
-    match = {
-        class = [[^(kitty-dropdown)$]],
-    },
-    float = true,
-    center = true,
-})
+
 
 
 -- ##################################################################
@@ -385,3 +377,14 @@ require("dms.binds")
 require("dms.cursor")
 require("dms.layout")
 require("dms.outputs")
+
+-- ##################################################################
+-- ### KITTY DROPDOWN — LEFT HALF, FREELY RESIZABLE
+-- ##################################################################
+
+hl.window_rule({
+    match = { class = [[^kitty-dropdown$]] },
+    float = true,
+    size = { "monitor_w * 0.49", "monitor_h * 0.90" },
+    move = { "monitor_w * 0.008", "monitor_h * 0.08" },
+})
